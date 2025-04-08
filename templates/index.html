@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Music Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #23252b);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    nav {
+      background: #141416;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    nav h2 {
+      font-size: 1.5rem;
+      color: #00ffd5;
+    }
+
+    nav ul {
+      display: flex;
+      gap: 1rem;
+      list-style: none;
+    }
+
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+
+    nav ul li a:hover {
+      color: #00ffd5;
+    }
+
+    main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+      color: #00ffd5;
+      text-shadow: 0 0 10px #00ffd5;
+    }
+
+    input {
+      padding: 12px;
+      width: 80%;
+      max-width: 400px;
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      box-shadow: 0 0 15px rgba(0, 255, 213, 0.3);
+    }
+
+    button {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 10px;
+      margin-left: 10px;
+      background-color: #00ffd5;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #00bfa6;
+      transform: scale(1.05);
+    }
+
+    #status {
+      margin-top: 25px;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    audio {
+      margin-top: 30px;
+      box-shadow: 0 0 20px rgba(0, 255, 213, 0.3);
+      border-radius: 10px;
+    }
+
+    footer {
+      margin-top: auto;
+      background: #111;
+      color: #888;
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      button {
+        margin-top: 10px;
+        width: 80%;
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <h2>🎧 BeatForge</h2>
+    <ul>
+      <li><a href="/">Home</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <h1>🎶 AI Music Generator 🎶</h1>
+
+    <input type="text" id="prompt" placeholder="Enter emotion (e.g. happy, sad, lofi)" />
+    <button onclick="generateMusic()">Generate</button>
+
+    <p id="status"></p>
+
+    <audio id="music" loop controls style="margin-top: 20px; display: none;">
+      <source id="music-source" src="" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+  </main>
+
+  <footer>
+    Made with 🎵 & ❤️ by Yash | © 2025 All rights reserved.
+  </footer>
+
+  <script>
+    function generateMusic() {
+      const prompt = document.getElementById("prompt").value;
+      const status = document.getElementById("status");
+
+      if (prompt.trim() === "") {
+        status.textContent = "Please enter a prompt.";
+        return;
+      }
+
+      let composer = 1;
+      let instrument = 2;
+      let songPath = "/static/emotions/default.mp3"; // fallback
+
+      if (prompt.toLowerCase().includes("happy")) {
+        composer = 1;
+        instrument = 3;
+        songPath = "/static/emotions/happy.mp3";
+      } else if (prompt.toLowerCase().includes("sad")) {
+        composer = 2;
+        instrument = 1;
+        songPath = "/static/emotions/sad.mp3";
+      } else if (prompt.toLowerCase().includes("lofi")) {
+        composer = 3;
+        instrument = 2;
+        songPath = "/static/emotions/lofi.mp3";
+      }
+
+      // Update UI
+      status.textContent = "Generating music, please wait...";
+
+      fetch("/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `composer=${composer}&instrument=${instrument}`,
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        status.textContent = `Generated music duration: ${data.duration.toFixed(2)} seconds 🎵`;
+
+        const audio = document.getElementById("music");
+        const source = document.getElementById("music-source");
+
+        source.src = songPath;
+        audio.load();
+        audio.style.display = "block";
+        audio.play().catch(err => {
+          console.error("Playback failed:", err);
+          status.textContent += " (Click anywhere to enable music)";
+        });
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        status.textContent = "Something went wrong. Try again.";
+      });
+    }
+  </script>
+
+</body>
+</html>
